@@ -17,17 +17,15 @@ const sequence = require('gulp-sequence');
 const browserSync = require('browser-sync').create(),
   reload = browserSync.reload;
 
-const chalk = require('chalk');
-
 const PATH = { DEV: 'src', BUILD: 'dist' };
 
 /**
  * HTML页面
- * sourcePath: {@dev} /views
- * outputPath: {@build} /
+ * source: src/pages
+ * output: dist/
  */
 gulp.task('html', () => {
-  let _source = PATH.DEV + '/views/**/*.html';
+  let _source = PATH.DEV + '/pages/**/*.html';
   let _output = PATH.BUILD;
 
   return gulp.src(_source)
@@ -46,17 +44,19 @@ gulp.task('html', () => {
 
 /**
  * CSS 网站样式
- * sourcePath: {@dev} /static/css
- * outputPath: {@build} /static/css
+ * source: src/static/css
+ * output: dist/static/css
  */
 gulp.task('style', () => {
-  let _source = PATH.DEV + '/static/css/*.less';
+  let _source_less = PATH.DEV + '/static/css/*.less';
+  let _source_css = PATH.DEV + '/static/css/*.css';
   let _output = PATH.BUILD + '/static/css';
 
   let plugins = [
     autoprefixer({ browsers: ['last 2 version', 'Firefox >= 15'] })
   ];
-  return gulp.src(_source)
+
+  let lessStream = gulp.src(_source_less)
     .pipe(less().on('error', e => {
       console.error(e.message);
       this.emit('end');
@@ -65,12 +65,17 @@ gulp.task('style', () => {
     .pipe(postcss(plugins))
     .pipe(gulp.dest(_output))
     .pipe(browserSync.reload({ stream: true }));
+  let cssStream = gulp.src(_source_css)
+    .pipe(gulp.dest(_output))
+    .pipe(browserSync.reload({ stream: true }));
+  
+  return merge(lessStream, cssStream);
 });
 
 /**
  * JS 脚本
- * sourcePath: {@dev} /script/js
- * outputPath: {@build} /static/js
+ * source: src/script/js
+ * output: dist/static/js
  */
 gulp.task('script', () => {
   let _source = PATH.DEV + '/static/js/**/*.js';
@@ -89,8 +94,8 @@ gulp.task('script', () => {
 
 /**
  * images 图片
- * sourcePath: {@dev} /static/images
- * outputPath: {@build} /static/images
+ * source: src/static/images
+ * output: dist/static/images
  */
 gulp.task('images', () => {
   let _source = PATH.DEV + '/static/images/**/*.{png,jpg,gif,svg}';
@@ -103,9 +108,9 @@ gulp.task('images', () => {
 
 /**
  * 合成雪碧图
- * sourcePath: {@dev} /sprite
- * outputPath: css => {@build} /static/css/sprite
- *             image => {@build} /static/images
+ * source: src/sprite
+ * output: css => src/static/css/sprite
+ *         image => dist/static/images
  */
 gulp.task('sprite', () => {
   let _source = PATH.DEV + '/sprite/*.{png,jpg}';
@@ -126,7 +131,20 @@ gulp.task('sprite', () => {
   return merge(imgStream, cssStream);
 });
 
-gulp.task('build', sequence(['sprite'], 'images', 'script', 'style', 'html'));
+/**
+ * fonts 字体
+ * source: src/static/fonts
+ * output: dist/static/fonts
+ */
+gulp.task('fonts', () => {
+  let _source = PATH.DEV + '/static/fonts/**/*';
+  let _output = PATH.BUILD + '/static/fonts';
+  return gulp.src(_source)
+    .pipe(gulp.dest(_output))
+    .pipe(browserSync.reload({ stream: true }));
+});
+
+gulp.task('build', sequence(['sprite'], 'images', 'script', 'style', 'html', 'fonts'));
 
 gulp.task('watch', () => {
   gulp.watch(PATH.DEV + '/views/**/*.html', ['html']);
@@ -134,6 +152,7 @@ gulp.task('watch', () => {
   gulp.watch(PATH.DEV + '/static/js/**/*.js', ['script']);
   gulp.watch(PATH.DEV + '/static/images/**/*.{png,jpg,gif,svg}', ['images']);
   gulp.watch(PATH.DEV + '/sprite/*.{png,jpg}', ['sprite']);
+  gulp.watch(PATH.DEV + '/static/fonts/**/*', ['fonts']);
 });
 
 gulp.task('default', ['build','watch'], () => {
