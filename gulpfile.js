@@ -147,7 +147,8 @@ gulp.task('fonts', () => {
 gulp.task('build', sequence(['sprite'], 'images', 'script', 'style', 'html', 'fonts'));
 
 gulp.task('watch', () => {
-  gulp.watch(PATH.DEV + '/views/**/*.html', ['html']);
+  gulp.watch(PATH.DEV + '/include/**/*.html', ['html']);
+  gulp.watch(PATH.DEV + '/pages/**/*.html', ['html']);
   gulp.watch(PATH.DEV + '/static/css/*.less', ['style']);
   gulp.watch(PATH.DEV + '/static/js/**/*.js', ['script']);
   gulp.watch(PATH.DEV + '/static/images/**/*.{png,jpg,gif,svg}', ['images']);
